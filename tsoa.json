@@ -1,0 +1,27 @@
+{
+  "entryFile": "src/server.ts",
+  "noImplicitAdditionalProperties": "throw-on-extras",
+  "controllerPathGlobs": ["src/features/**/*controller.ts"],
+  "spec": {
+    "outputDirectory": "public",
+    "specVersion": 3,
+    "spec": {
+      "info": {
+        "title": "Cairo Backend API",
+        "version": "1.0.0",
+        "description": "RESTful API for Cairo Backend"
+      },
+      "servers": [
+        {
+          "url": "/api/v1",
+          "description": "API v1"
+        }
+      ]
+    }
+  },
+  "routes": {
+    "routesDir": "src/generated",
+    "middleware": "express",
+    "basePath": "/api/v1"
+  }
+}

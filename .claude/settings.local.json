@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 5 node:*)",
+      "Bash(exit 0)",
+      "Bash(curl:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(npm install:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(npm test)",
+      "Bash(timeout 2 npm test:*)",
+      "Bash(npx vitest run)",
+      "Bash(node dist/server.js:*)",
+      "Bash(timeout 3 node:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
