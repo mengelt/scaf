@@ -14,8 +14,9 @@ Welcome to the Cairo Backend project! This guide will help you understand the ar
 8. [Testing](#testing)
 9. [Debugging](#debugging)
 10. [API Documentation with TSOA](#api-documentation-with-tsoa)
-11. [Best Practices](#best-practices)
-12. [Common Patterns](#common-patterns)
+11. [Code Formatting](#code-formatting)
+12. [Best Practices](#best-practices)
+13. [Common Patterns](#common-patterns)
 
 ---
 
@@ -1476,6 +1477,220 @@ The JSDoc comments become endpoint descriptions in Swagger UI.
 
 ---
 
+## Code Formatting
+
+We use **Prettier** for automatic code formatting to maintain consistent code style across the team. Prettier is configured to format on save in VS Code and can also be run manually.
+
+### Why Prettier?
+
+- **Consistency**: Everyone's code looks the same, reducing cognitive load in code reviews
+- **No debates**: No need to argue about code style preferences
+- **Automatic**: Formats on save, no manual effort required
+- **Integration**: Works seamlessly with TypeScript, JSON, and other files
+
+### Prettier Configuration
+
+Our Prettier settings are in `.prettierrc`:
+
+```json
+{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "arrowParens": "always",
+  "bracketSpacing": true,
+  "endOfLine": "lf"
+}
+```
+
+#### What Each Rule Does
+
+**`"semi": true`**
+- **Purpose**: Require semicolons at the end of statements
+- **Example**:
+  ```typescript
+  // ✓ Correct
+  const x = 5;
+
+  // ✗ Without semicolons
+  const x = 5
+  ```
+
+**`"trailingComma": "es5"`**
+- **Purpose**: Add trailing commas where valid in ES5 (objects, arrays)
+- **Why**: Makes git diffs cleaner when adding items
+- **Example**:
+  ```typescript
+  // ✓ Correct
+  const obj = {
+    name: 'Product',
+    price: 99,  // ← trailing comma
+  };
+
+  // ✗ Without trailing comma
+  const obj = {
+    name: 'Product',
+    price: 99
+  };
+  ```
+
+**`"singleQuote": true`**
+- **Purpose**: Use single quotes instead of double quotes
+- **Example**:
+  ```typescript
+  // ✓ Correct
+  const message = 'Hello world';
+
+  // ✗ Double quotes
+  const message = "Hello world";
+  ```
+
+**`"printWidth": 100`**
+- **Purpose**: Wrap lines that exceed 100 characters
+- **Why**: Balance between readability and screen space
+- **Example**:
+  ```typescript
+  // ✓ Wraps long lines
+  const result = someVeryLongFunctionName(
+    firstParameter,
+    secondParameter,
+    thirdParameter
+  );
+
+  // ✗ Too long (would wrap if over 100 chars)
+  const result = someVeryLongFunctionName(firstParameter, secondParameter, thirdParameter, fourthParameter, fifthParameter);
+  ```
+
+**`"tabWidth": 2`**
+- **Purpose**: Use 2 spaces for indentation
+- **Why**: Standard for TypeScript/JavaScript projects
+- **Example**:
+  ```typescript
+  // ✓ 2 spaces
+  function example() {
+    if (true) {
+      console.log('indented');
+    }
+  }
+  ```
+
+**`"useTabs": false`**
+- **Purpose**: Use spaces instead of tab characters
+- **Why**: Ensures consistent rendering across all editors
+
+**`"arrowParens": "always"`**
+- **Purpose**: Always include parentheses around arrow function parameters
+- **Example**:
+  ```typescript
+  // ✓ Correct
+  const double = (x) => x * 2;
+
+  // ✗ Without parens (not allowed)
+  const double = x => x * 2;
+  ```
+
+**`"bracketSpacing": true`**
+- **Purpose**: Add spaces inside object literal braces
+- **Example**:
+  ```typescript
+  // ✓ With spacing
+  const obj = { name: 'John' };
+
+  // ✗ Without spacing
+  const obj = {name: 'John'};
+  ```
+
+**`"endOfLine": "lf"`**
+- **Purpose**: Use Unix-style line endings (LF) instead of Windows (CRLF)
+- **Why**: Consistency across different operating systems
+- **Note**: Git is configured to handle this automatically on Windows
+
+### Using Prettier
+
+**Automatic Formatting (Recommended)**
+
+VS Code is configured to format on save. Just save your file (`Ctrl+S` or `Cmd+S`) and Prettier runs automatically.
+
+**Manual Formatting**
+
+```bash
+# Format all files in src/
+npm run format
+
+# Check formatting without changing files (useful for CI)
+npm run format:check
+```
+
+**Format Single File in VS Code**
+
+- Right-click in file → "Format Document"
+- Or: `Shift+Alt+F` (Windows/Linux) / `Shift+Option+F` (Mac)
+
+### VS Code Setup
+
+The `.vscode/settings.json` file configures Prettier for the team:
+
+```json
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
+```
+
+**First Time Setup:**
+
+1. Install the Prettier extension in VS Code:
+   - Open Extensions (`Ctrl+Shift+X`)
+   - Search for "Prettier - Code formatter"
+   - Install `esbenp.prettier-vscode`
+
+2. Restart VS Code
+
+3. Files will now format automatically on save!
+
+### Files Excluded from Formatting
+
+The `.prettierignore` file excludes:
+
+- `node_modules/` - Third-party code
+- `dist/` and `build/` - Generated output
+- `src/generated/` - TSOA generated files
+- `coverage/` - Test coverage reports
+- `public/swagger.json` - Generated Swagger spec
+- `package-lock.json` - Lock file (don't format)
+
+### Best Practices
+
+✅ **DO:**
+- Let Prettier format everything - don't fight it
+- Commit formatted code (no "formatting-only" commits in PRs)
+- Install Prettier extension in VS Code
+- Enable format on save
+
+❌ **DON'T:**
+- Manually format code (let Prettier do it)
+- Disable Prettier for specific files without good reason
+- Mix formatted and unformatted code in the same commit
+- Override Prettier settings locally
+
+### CI/CD Integration
+
+In CI/CD pipelines, we check formatting:
+
+```bash
+npm run format:check
+```
+
+If this fails, the build will fail. Run `npm run format` locally to fix.
+
+---
+
 ## Best Practices
 
 ### 1. Code Organization
@@ -1715,6 +1930,8 @@ npm run build         # Production build
 npm test              # Run tests
 npm run test:ui       # Tests with UI
 npm run tsoa:generate # Generate routes and Swagger
+npm run format        # Format all files with Prettier
+npm run format:check  # Check formatting (CI)
 F5 in VS Code         # Debug with breakpoints
 ```
 
