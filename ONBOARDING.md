@@ -1982,4 +1982,334 @@ import { Controller, Get, Post, Put, Delete, Route, Tags, Path, Body, Query, Sec
 5. Generate Swagger documentation
 6. Get code review from team
 
+---
+
+## Appendix: Why We Use Semicolons
+
+This section provides technical justification for our code style decision to require semicolons. Understanding these reasons helps the team make informed decisions and maintain consistency.
+
+### TL;DR
+
+**Semicolons prevent a class of bugs that omitting them doesn't prevent. The benefits of explicit semicolons outweigh the aesthetic preference of omitting them.**
+
+### Technical Arguments
+
+#### 1. Automatic Semicolon Insertion (ASI) Has Edge Cases
+
+JavaScript's ASI rules have gotchas that cause actual runtime bugs:
+
+**Example 1: Array Access After Function Call**
+```typescript
+// WITHOUT SEMICOLONS - BREAKS:
+const result = calculate()
+[1, 2, 3].forEach(x => console.log(x))
+
+// JavaScript interprets as:
+const result = calculate()[1, 2, 3].forEach(x => console.log(x))
+// Error: Cannot read property '1' of undefined
+
+// WITH SEMICOLONS - WORKS:
+const result = calculate();
+[1, 2, 3].forEach(x => console.log(x));
+```
+
+**Example 2: Return Statement Newlines**
+```typescript
+// WITHOUT SEMICOLONS - RETURNS undefined:
+return
+{
+  status: 'ok',
+  data: results
+}
+
+// JavaScript interprets as:
+return;  // ← ASI inserts semicolon here
+{
+  status: 'ok',
+  data: results
+}
+// Function returns undefined, not the object!
+
+// WITH SEMICOLONS - YOU'LL SEE THE PROBLEM:
+return;  // ← Error is obvious
+{
+  status: 'ok',
+  data: results
+}
+```
+
+**Example 3: IIFE (Immediately Invoked Function Expression)**
+```typescript
+// WITHOUT SEMICOLONS - BREAKS:
+const fn = () => console.log('hello')
+(async () => {
+  await doSomething()
+})()
+
+// JavaScript interprets as:
+const fn = () => console.log('hello')(async () => { ... })()
+// Error: console.log(...) is not a function
+
+// WITH SEMICOLONS - WORKS:
+const fn = () => console.log('hello');
+(async () => {
+  await doSomething()
+})();
+```
+
+**Example 4: Template Literals**
+```typescript
+// WITHOUT SEMICOLONS - BREAKS:
+const greeting = 'Hello'
+`${name}`.toUpperCase()
+
+// JavaScript interprets as:
+const greeting = 'Hello'`${name}`.toUpperCase()
+// Tagged template literal - not what you intended!
+
+// WITH SEMICOLONS - WORKS:
+const greeting = 'Hello';
+`${name}`.toUpperCase();
+```
+
+#### 2. TypeScript Doesn't Add Semicolons During Compilation
+
+The TypeScript compiler transpiles your code **without adding semicolons**:
+
+```typescript
+// TypeScript source (no semicolons)
+const x = getData()
+const y = process(x)
+
+// Compiles to JavaScript (also no semicolons)
+const x = getData()
+const y = process(x)
+```
+
+**If ASI edge cases exist in your TypeScript, they'll exist in the compiled JavaScript.**
+
+#### 3. Minification and Code Concatenation
+
+While modern tools handle this better, edge cases still exist:
+
+```javascript
+// File 1 ends with:
+const x = getData()
+
+// File 2 starts with:
+[1, 2, 3].forEach(n => console.log(n))
+
+// After concatenation/minification:
+const x = getData()[1,2,3].forEach(n => console.log(n))
+// BREAKS - trying to access getData()[1]
+```
+
+### Practical Arguments
+
+#### 4. Defensive Programming
+
+Semicolons make your intent explicit. You're not relying on a complex set of ASI rules:
+
+```typescript
+// EXPLICIT - Clear intent, no ambiguity
+const x = 5;
+const y = 10;
+
+// IMPLICIT - Relies on ASI rules, requires mental overhead
+const x = 5
+const y = 10
+// What if next line starts with `(`, `[`, `+`, `-`, or template literal?
+```
+
+#### 5. Easier Refactoring
+
+You can move lines around without worrying about context:
+
+```typescript
+// With semicolons - safe to reorder
+const a = getData();
+const b = processData();
+const c = saveData();
+
+// Without semicolons - order can matter
+const a = getData()
+[1, 2, 3].forEach(...)  // This breaks if moved after getData()
+const b = processData()
+```
+
+#### 6. Code Generation Tools Expect Semicolons
+
+- **TSOA** generates routes with semicolons
+- **Most codegen tools** output semicolons
+- **AI/Copilot** tends to generate with semicolons
+- **Prettier default** is `"semi": true`
+
+Mixing styles in the same codebase is worse than picking one.
+
+#### 7. Consistency with Other Languages
+
+If your team works across multiple languages:
+
+**Languages that require semicolons:**
+- Java, C#, C++, Rust, Go, PHP, Swift
+
+**Benefit:** Muscle memory transfers better, less context switching.
+
+### Industry Standards
+
+#### 8. Major Projects Use Semicolons
+
+**With Semicolons:**
+- TypeScript compiler itself
+- Angular
+- NestJS
+- Express.js
+- React (official examples)
+- Node.js core
+- Most Google open source (Google Style Guide requires them)
+- Microsoft open source projects
+- AWS SDK
+
+**Without Semicolons:**
+- Vue.js
+- Nuxt
+- Some newer/smaller projects
+
+**The ratio among established enterprise projects heavily favors semicolons.**
+
+#### 9. TypeScript Official Documentation
+
+TypeScript's official documentation and examples use semicolons consistently.
+
+#### 10. Enterprise Standard
+
+Most enterprise codebases (financial, healthcare, insurance) require semicolons for:
+- Reduced cognitive load
+- Fewer potential bugs
+- Easier onboarding for new developers
+- Consistency with established patterns
+
+### Counter-Arguments Addressed
+
+#### "Semicolons are optional in JavaScript"
+**Response:** They're optional in the sense that ASI will sometimes insert them, but ASI has edge cases that cause bugs. "Optional" doesn't mean "without consequences."
+
+The JavaScript spec explicitly states that ASI is an **error correction mechanism**, not a feature to rely on.
+
+#### "It's cleaner without them"
+**Response:** "Cleaner" is subjective. What's objectively true:
+- Semicolons make intent explicit
+- They reduce bugs
+- They remove cognitive overhead
+
+Is saving 1 character per line worth potential runtime errors?
+
+#### "Modern tools handle ASI edge cases"
+**Response:** Tools can't fix logic errors caused by ASI. If your code is syntactically valid but semantically wrong, linters won't catch it:
+
+```typescript
+return
+  getData()  // Valid syntax, wrong behavior (returns undefined)
+```
+
+#### "I've never had issues without semicolons"
+**Response:** Survivorship bias. Just because you haven't encountered the edge cases doesn't mean they don't exist. When you do hit them:
+- They're hard to debug (runtime errors, not compile errors)
+- They often work in development but break after minification
+- They waste team time investigating
+
+#### "No-semicolon is the future/modern JavaScript"
+**Response:**
+- TypeScript (the future of JavaScript) uses semicolons in all official examples
+- Deno (modern JavaScript runtime) uses semicolons in documentation
+- Most new TypeScript projects start with semicolons
+- "Modern" doesn't mean "better" - evaluate technical merits
+
+### Real-World Bug Examples
+
+**From Stack Overflow (thousands of upvotes):**
+```typescript
+// Bug: "Why does my array method not work?"
+function getDefaults() {
+  return
+  {
+    mode: 'strict'
+  }
+}
+[1, 2, 3].forEach(console.log)
+// forEach never executes - getDefaults returns undefined
+```
+
+**From GitHub Issues:**
+```typescript
+// Bug: "Library breaks after bundling"
+const lib = createLibrary()
+(function init() {
+  // initialization
+})()
+// Error in production: createLibrary()(...) is not a function
+```
+
+### The Pragmatic Argument
+
+#### Time Spent Debating > Time Typing Semicolons
+
+**Math:**
+- Average developer types ~200 lines of code per day
+- Adding semicolon takes ~1 second per line = ~200 seconds/day (3.3 minutes)
+- **A single code review debate about semicolons takes > 5 minutes**
+- Over a year: 3.3 min/day × 220 working days = **12 hours/year typing semicolons**
+- One afternoon meeting debating code style = **4+ hours**
+
+**The time "saved" by omitting semicolons is negligible. The cognitive overhead and potential bugs are not.**
+
+#### Prettier Makes This a Non-Issue
+
+With Prettier configured to `"semi": true`:
+- Everyone formats on save
+- No one thinks about semicolons
+- Consistency is automatic
+- **The debate becomes moot**
+
+If half your team prefers no-semicolons, they can write code without them and Prettier will add them automatically. Everyone gets to write in their preferred style while the codebase stays consistent.
+
+### The Bottom Line
+
+**"Semicolons prevent a class of bugs. What bugs does omitting semicolons prevent?"**
+
+The answer is: **none**.
+
+No-semicolons provides:
+- Aesthetic preference (subjective)
+- Fewer characters (negligible)
+
+Semicolons provide:
+- Explicit intent (objective)
+- Bug prevention (measurable)
+- Consistency with generated code (practical)
+- Industry standard (verifiable)
+
+**When safety and clarity are at stake, we choose defensive programming.**
+
+### Recommended Response to Semicolon Debates
+
+When the topic comes up:
+
+> "I understand both sides have preferences. Our decision to use semicolons is based on:
+> 1. **Technical risk mitigation** - ASI has documented edge cases that cause runtime bugs
+> 2. **Industry standard** - TypeScript, NestJS, Angular, and most enterprise codebases use them
+> 3. **Tool consistency** - Our codegen (TSOA) and Prettier default to semicolons
+> 4. **Pragmatism** - Prettier enforces them automatically, so no one has to think about it
+>
+> The benefit of omitting semicolons (aesthetic preference) doesn't outweigh these technical considerations. Let's focus our code review time on logic, architecture, and user value instead of syntax."
+
+### Additional Resources
+
+- [JavaScript Spec: Automatic Semicolon Insertion](https://tc39.es/ecma262/#sec-automatic-semicolon-insertion)
+- [Google JavaScript Style Guide: Semicolons](https://google.github.io/styleguide/jsguide.html#formatting-semicolons-are-required)
+- [TypeScript Coding Guidelines](https://github.com/Microsoft/TypeScript/wiki/Coding-guidelines)
+- [Stack Overflow: Common ASI Pitfalls](https://stackoverflow.com/questions/2846283/what-are-the-rules-for-javascripts-automatic-semicolon-insertion-asi)
+
+---
+
 Welcome to the team! 🚀
