@@ -2,6 +2,9 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
+import { existsSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import config from './config';
 import logger from './core/logger';
 import { initializeDatabase, closeDatabase } from './core/database/connection';
@@ -78,13 +81,31 @@ async function initializeRoutes(app: Application): Promise<void> {
     });
   });
 
-  // Swagger documentation
-  const swaggerDocument = await import('../public/swagger.json', { assert: { type: 'json' } });
+  // Swagger documentation (optional - only if generated)
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const swaggerPath = resolve(__dirname, '../public/swagger.json');
 
-  // First middleware must be serve to handle static assets
-  app.use('/api-docs', swaggerUi.serve);
-  // Then setup for the main page
-  app.get('/api-docs', swaggerUi.setup(swaggerDocument.default));
+  if (existsSync(swaggerPath)) {
+    try {
+      const swaggerDocument = await import('../public/swagger.json', {
+        assert: { type: 'json' },
+      });
+
+      // First middleware must be serve to handle static assets
+      app.use('/api-docs', swaggerUi.serve);
+      // Then setup for the main page
+      app.get('/api-docs', swaggerUi.setup(swaggerDocument.default));
+
+      logger.info('Swagger UI enabled at /api-docs');
+    } catch (error) {
+      logger.warn('Failed to load swagger.json, API docs disabled:', error);
+    }
+  } else {
+    logger.warn(
+      'Swagger spec not found. Run "npm run tsoa:generate" to enable API documentation.'
+    );
+  }
 
   // Register TSOA generated routes
   RegisterRoutes(app);
@@ -183,7 +204,6 @@ async function startServer(): Promise<void> {
       logger.info(`Server running on port ${config.port}`);
       logger.info(`Environment: ${config.nodeEnv}`);
       logger.info(`Health check: http://localhost:${config.port}/actuator/health`);
-      logger.info(`API docs: http://localhost:${config.port}/api-docs (run 'npm run tsoa:generate' to enable)`);
     });
 
     // Graceful shutdown
