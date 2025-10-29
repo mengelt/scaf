@@ -19,19 +19,8 @@ const app: Application = express();
  * Initialize middleware
  */
 function initializeMiddleware(app: Application): void {
-  // Security middleware - relax CSP for Swagger UI
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:', 'validator.swagger.io'],
-        },
-      },
-    })
-  );
+  // Security middleware
+  app.use(helmet());
 
   // CORS middleware
   app.use(
@@ -71,7 +60,11 @@ async function initializeRoutes(app: Application): Promise<void> {
     });
   });
 
-  // Swagger documentation
+  // Swagger documentation (disable CSP for Swagger UI to work)
+  app.use('/api-docs', (req: Request, res: Response, next) => {
+    res.removeHeader('Content-Security-Policy');
+    next();
+  });
   const swaggerDocument = await import('../public/swagger.json', { assert: { type: 'json' } });
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument.default));
 
