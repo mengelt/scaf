@@ -10,8 +10,8 @@ import { errorHandler, notFoundHandler } from './core/middleware/error.middlewar
 import { apiRateLimiter } from './core/middleware/rate-limit.middleware';
 import { requestIdMiddleware } from './core/middleware/request-id.middleware';
 
-// Import generated routes (will be created by tsoa)
-// import { RegisterRoutes } from './generated/routes';
+// Import generated routes (created by tsoa)
+import { RegisterRoutes } from './generated/routes.js';
 
 const app: Application = express();
 
@@ -61,13 +61,11 @@ async function initializeRoutes(app: Application): Promise<void> {
   });
 
   // Swagger documentation
-  // TODO: Uncomment after running tsoa spec generation
-  // import swaggerDocument from '../public/swagger.json' assert { type: 'json' };
-  // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  const swaggerDocument = await import('../public/swagger.json', { assert: { type: 'json' } });
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument.default));
 
   // Register TSOA generated routes
-  // TODO: Uncomment after running tsoa routes generation
-  // RegisterRoutes(app);
+  RegisterRoutes(app);
 
   // Manual route registration (temporary until tsoa is set up)
   // Health routes are registered manually since they don't require auth
