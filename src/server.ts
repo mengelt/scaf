@@ -19,8 +19,26 @@ const app: Application = express();
  * Initialize middleware
  */
 function initializeMiddleware(app: Application): void {
-  // Security middleware
-  app.use(helmet());
+  // Security middleware - configure CSP to allow Swagger UI
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          baseUri: ["'self'"],
+          fontSrc: ["'self'", 'https:', 'data:'],
+          formAction: ["'self'"],
+          frameAncestors: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'validator.swagger.io'],
+          objectSrc: ["'none'"],
+          scriptSrc: ["'self'"],
+          scriptSrcAttr: ["'none'"],
+          styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+          upgradeInsecureRequests: [],
+        },
+      },
+    })
+  );
 
   // CORS middleware
   app.use(
@@ -60,13 +78,13 @@ async function initializeRoutes(app: Application): Promise<void> {
     });
   });
 
-  // Swagger documentation (disable CSP for Swagger UI to work)
-  app.use('/api-docs', (req: Request, res: Response, next) => {
-    res.removeHeader('Content-Security-Policy');
-    next();
-  });
+  // Swagger documentation
   const swaggerDocument = await import('../public/swagger.json', { assert: { type: 'json' } });
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument.default));
+
+  // First middleware must be serve to handle static assets
+  app.use('/api-docs', swaggerUi.serve);
+  // Then setup for the main page
+  app.get('/api-docs', swaggerUi.setup(swaggerDocument.default));
 
   // Register TSOA generated routes
   RegisterRoutes(app);

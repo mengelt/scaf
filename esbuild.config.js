@@ -14,7 +14,8 @@ const config = {
   external: [
     'oracledb',
     'bufferutil',
-    'utf-8-validate'
+    'utf-8-validate',
+    'swagger-ui-express'
   ],
   logLevel: 'info',
   minify: isProduction,
