@@ -1251,6 +1251,155 @@ Search logs by request ID to trace the entire request lifecycle.
 
 ## API Documentation with TSOA
 
+### Understanding TSOA
+
+**TSOA** stands for **TypeScript OpenAPI** (also called TypeScript to OpenAPI). While many developers think it's just for Swagger generation, TSOA is actually much more powerful.
+
+#### What TSOA Does
+
+**1. Automatic Route Generation (Primary Feature)**
+
+TSOA generates actual Express route handlers from your decorated controllers. You never write Express routes manually:
+
+```typescript
+// You write this:
+@Route('api/v1/products')
+export class ProductController extends Controller {
+  @Get('{id}')
+  public async getProduct(@Path() id: number): Promise<Product> {
+    return await this.service.getProductById(id);
+  }
+}
+
+// TSOA generates this in src/generated/routes.ts:
+router.get('/api/v1/products/:id', async (req, res, next) => {
+  const controller = new ProductController();
+  const validatedArgs = { id: Number(req.params.id) };
+  const result = await controller.getProduct(validatedArgs.id);
+  res.json(result);
+});
+```
+
+**2. Runtime Type Validation**
+
+TSOA validates request data against your TypeScript types at runtime:
+
+```typescript
+@Get('{id}')
+public async getProduct(@Path() id: number): Promise<Product>
+//                              ^^^^^^
+// TSOA ensures this is actually a number at runtime
+// Automatically converts "123" → 123
+// Rejects "abc" with 400 validation error
+```
+
+**3. OpenAPI/Swagger Specification**
+
+Generates `swagger.json` (OpenAPI 3.0 spec) from your code, which powers:
+- Swagger UI documentation at `/api-docs`
+- API client generation for partners
+- Contract testing
+- API versioning documentation
+
+**4. Type Safety Between API Contract and Implementation**
+
+Your TypeScript types ARE your API contract. Everything stays in sync:
+
+```typescript
+interface CreateProductDTO {
+  name: string;
+  price: number;
+}
+
+@Post()
+public async create(@Body() body: CreateProductDTO): Promise<Product>
+//                          ^^^^^^^^^^^^^^^^^^
+// Swagger documents exactly these fields
+// Runtime validates exactly these fields
+// TypeScript ensures you handle exactly these fields
+
+// Change the DTO → Everything updates automatically:
+// ✓ TypeScript compilation
+// ✓ Generated routes
+// ✓ Generated Swagger docs
+// ✓ Runtime validation
+```
+
+**5. Request/Response Transformation**
+
+Handles serialization/deserialization automatically:
+
+```typescript
+@Get('{id}')
+public async getProduct(@Path() id: number): Promise<Product> {
+  // You return: { id: 1, createdAt: new Date('2025-10-28') }
+  // TSOA transforms to: { "id": 1, "createdAt": "2025-10-28T..." }
+}
+```
+
+**6. Authentication/Security Integration**
+
+Maps security decorators to your middleware:
+
+```typescript
+@Security('apiKey')
+@Get('{id}')
+// TSOA ensures your auth middleware is called before this endpoint
+```
+
+#### Key Benefits
+
+**Single Source of Truth**
+- TypeScript types define everything
+- No separate API spec to maintain
+- Documentation can never be out of sync
+
+**Compile-Time + Runtime Safety**
+- TypeScript catches type errors at compile time
+- TSOA validates actual runtime requests
+- No more `req.body.price` that might secretly be a string
+
+**Less Boilerplate**
+- No manual Express route registration
+- No manual validation code
+- No manual Swagger YAML writing
+
+**Better Developer Experience**
+- IntelliSense for your API contracts
+- Refactor with confidence (rename fields, everything updates)
+- Generated Swagger UI for testing
+
+#### How TSOA Fits in This Project
+
+```
+Developer writes:
+  ProductController with @Route, @Get, @Post decorators
+
+npm run tsoa:generate creates:
+  1. src/generated/routes.ts (Express route handlers)
+  2. public/swagger.json (OpenAPI specification)
+
+Server startup:
+  RegisterRoutes(app) mounts all routes
+  swaggerUi.setup() enables interactive docs
+
+Result:
+  ✓ Fully working, type-safe API endpoints
+  ✓ Interactive Swagger UI documentation
+  ✓ No manual route or validation code
+```
+
+#### What TSOA Doesn't Do
+
+- ❌ Database operations (use repositories)
+- ❌ Business logic (use services)
+- ❌ Complex validation rules (use Joi for that)
+- ❌ Replace Express (it generates Express routes)
+
+**Bottom line:** TSOA is a **code generator** that bridges TypeScript type safety and runtime Express applications, with OpenAPI documentation as a bonus output.
+
+---
+
 ### TSOA Annotations Reference
 
 ```typescript
