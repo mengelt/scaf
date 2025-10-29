@@ -163,6 +163,7 @@ async function startServer(): Promise<void> {
       logger.info(`Server running on port ${config.port}`);
       logger.info(`Environment: ${config.nodeEnv}`);
       logger.info(`Health check: http://localhost:${config.port}/actuator/health`);
+      logger.info(`API docs: http://localhost:${config.port}/api-docs (run 'npm run tsoa:generate' to enable)`);
     });
 
     // Graceful shutdown
