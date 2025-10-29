@@ -29,7 +29,7 @@ export class UserService {
 
       return {
         ...result,
-        data: result.data.map(user => this.mapToResponseDto(user)),
+        data: result.data.map((user) => this.mapToResponseDto(user)),
       };
     } catch (error) {
       logger.error('Error getting all users:', error);

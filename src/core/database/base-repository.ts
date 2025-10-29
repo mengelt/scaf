@@ -48,10 +48,7 @@ export abstract class BaseRepository<T extends BaseModel> {
   /**
    * Find all records with optional filtering and pagination
    */
-  async findAll(
-    filters?: Filter[],
-    pagination?: PaginationParams
-  ): Promise<PaginatedResult<T>> {
+  async findAll(filters?: Filter[], pagination?: PaginationParams): Promise<PaginatedResult<T>> {
     try {
       logger.info(`Finding all ${this.tableName} with filters:`, filters);
 
@@ -115,7 +112,9 @@ export abstract class BaseRepository<T extends BaseModel> {
 
       // Build INSERT statement
       const columns = Object.keys(row).join(', ');
-      const placeholders = Object.keys(row).map((_, i) => `:${i + 1}`).join(', ');
+      const placeholders = Object.keys(row)
+        .map((_, i) => `:${i + 1}`)
+        .join(', ');
       const values = Object.values(row);
 
       // const result = await connection.execute(
@@ -146,7 +145,9 @@ export abstract class BaseRepository<T extends BaseModel> {
       const connection = await getConnection();
 
       // Build UPDATE statement
-      const setClauses = Object.keys(row).map((col, i) => `${col} = :${i + 1}`).join(', ');
+      const setClauses = Object.keys(row)
+        .map((col, i) => `${col} = :${i + 1}`)
+        .join(', ');
       const values = [...Object.values(row), id];
 
       // const result = await connection.execute(
@@ -222,6 +223,6 @@ export abstract class BaseRepository<T extends BaseModel> {
       }
     });
 
-    return `WHERE ${conditions.filter(c => c).join(' AND ')}`;
+    return `WHERE ${conditions.filter((c) => c).join(' AND ')}`;
   }
 }
