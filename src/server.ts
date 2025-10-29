@@ -19,8 +19,19 @@ const app: Application = express();
  * Initialize middleware
  */
 function initializeMiddleware(app: Application): void {
-  // Security middleware
-  app.use(helmet());
+  // Security middleware - relax CSP for Swagger UI
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'validator.swagger.io'],
+        },
+      },
+    })
+  );
 
   // CORS middleware
   app.use(
