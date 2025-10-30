@@ -4,15 +4,15 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Server",
+      "name": "Launch Server (Watch Mode)",
       "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/dist/server.js",
-      "preLaunchTask": "npm: build",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:nodemon"],
+      "preLaunchTask": "esbuild:watch",
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "sourceMaps": true,
       "console": "integratedTerminal",
       "restart": true,
-      "runtimeArgs": ["--enable-source-maps"],
       "env": {
         "NODE_ENV": "development"
       }
@@ -20,10 +20,10 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Server (Watch Mode)",
+      "name": "Launch Server (Build Once)",
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/dist/server.js",
-      "preLaunchTask": "build:watch",
+      "preLaunchTask": "npm: build",
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "sourceMaps": true,
       "console": "integratedTerminal",

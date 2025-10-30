@@ -18,19 +18,40 @@
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
-          "regexp": "^([^\\\\s].*)\\\\((\\\\d+,\\\\d+)\\\\):\\\\s*(.*)$",
+          "regexp": "^$",
           "file": 1,
           "location": 2,
           "message": 3
         },
         "background": {
           "activeOnStart": true,
-          "beginsPattern": "^.*watching for file changes.*$",
+          "beginsPattern": "^.*Watching for changes.*$",
           "endsPattern": "^.*Build complete.*$"
         }
       },
-      "label": "build:watch",
-      "detail": "Run esbuild in watch mode with hot reload"
+      "label": "esbuild:watch",
+      "detail": "Run esbuild in watch mode"
+    },
+    {
+      "type": "npm",
+      "script": "dev:nodemon",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*starting.*$",
+          "endsPattern": "^.*app crashed.*$"
+        }
+      },
+      "label": "nodemon:watch",
+      "detail": "Run nodemon to restart server on changes",
+      "dependsOn": ["esbuild:watch"]
     },
     {
       "type": "npm",

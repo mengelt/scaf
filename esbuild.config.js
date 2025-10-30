@@ -10,7 +10,7 @@ const config = {
   target: 'node18',
   outdir: 'dist',
   format: 'esm',
-  sourcemap: true,
+  sourcemap: isDevelopment,
   external: [
     'oracledb',
     'bufferutil',
@@ -20,15 +20,29 @@ const config = {
   logLevel: 'info',
   minify: isProduction,
   treeShaking: true,
-  banner: {
-    js: "import { createRequire } from 'module';const require = createRequire(import.meta.url);import { fileURLToPath } from 'url';import { dirname } from 'path';const __filename = fileURLToPath(import.meta.url);const __dirname = dirname(__filename);"
-  },
+  inject: ['./esbuild-shims.js'],
 };
 
 async function build() {
   try {
     if (isDevelopment) {
-      const ctx = await esbuild.context(config);
+      const ctx = await esbuild.context({
+        ...config,
+        plugins: [
+          {
+            name: 'rebuild-notify',
+            setup(build) {
+              build.onEnd((result) => {
+                if (result.errors.length === 0) {
+                  console.log('✅ Build complete - ' + new Date().toLocaleTimeString());
+                } else {
+                  console.error('❌ Build failed with errors');
+                }
+              });
+            },
+          },
+        ],
+      });
 
       await ctx.watch();
       console.log('👀 Watching for changes...');

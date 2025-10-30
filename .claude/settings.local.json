@@ -18,7 +18,16 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git remote add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npm run format:check:*)",
+      "Bash(npm run format:*)",
+      "Bash(npm run lint)",
+      "Bash(if [ -f public/swagger.json ])",
+      "Bash(then mv public/swagger.json public/swagger.json.bak)",
+      "Bash(fi)",
+      "Bash(if [ -f public/swagger.json.bak ])",
+      "Bash(then mv public/swagger.json.bak public/swagger.json)",
+      "Bash(option is set to 'esnext', 'node16', 'node18', 'nodenext', or 'preserve'.\"\n\nThe nodenext setting is the most appropriate for Node.js backends as it:\n- Supports import assertions for JSON imports\n- Aligns with Node.js module resolution\n- Supports package.json \"exports\" field\n- Future-proof for Node.js 16+ features\n\nNo functional changes, just better TypeScript configuration.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

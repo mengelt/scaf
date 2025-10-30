@@ -1,14 +1,14 @@
-import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import swaggerUi from 'swagger-ui-express';
+import express, { Application, Request, Response } from 'express';
 import { existsSync } from 'fs';
-import { resolve, dirname } from 'path';
+import helmet from 'helmet';
+import { dirname, resolve } from 'path';
+import swaggerUi from 'swagger-ui-express';
 import { fileURLToPath } from 'url';
 import config from './config';
+import { closeRedis, initializeRedis } from './core/cache/redis';
+import { closeDatabase, initializeDatabase } from './core/database/connection';
 import logger from './core/logger';
-import { initializeDatabase, closeDatabase } from './core/database/connection';
-import { initializeRedis, closeRedis } from './core/cache/redis';
 import { errorHandler, notFoundHandler } from './core/middleware/error.middleware';
 import { apiRateLimiter } from './core/middleware/rate-limit.middleware';
 import { requestIdMiddleware } from './core/middleware/request-id.middleware';
@@ -22,7 +22,10 @@ const app: Application = express();
  * Initialize middleware
  */
 function initializeMiddleware(app: Application): void {
+  logger.info('→ Registering middleware...');
+
   // Security middleware - configure CSP to allow Swagger UI
+  logger.info('  ✓ Helmet security headers');
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -44,6 +47,7 @@ function initializeMiddleware(app: Application): void {
   );
 
   // CORS middleware
+  logger.info('  ✓ CORS configuration');
   app.use(
     cors({
       origin: config.cors.origin,
@@ -52,31 +56,40 @@ function initializeMiddleware(app: Application): void {
   );
 
   // Request ID middleware - must be early to ensure all logs have request ID
+  logger.info('  ✓ Request ID tracking');
   app.use(requestIdMiddleware);
 
   // Body parsing middleware
+  logger.info('  ✓ Body parser (JSON/URL-encoded)');
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
   // Rate limiting
+  logger.info('  ✓ Rate limiting');
   app.use('/api', apiRateLimiter);
 
   // Request logging
+  logger.info('  ✓ Request logging');
   app.use((req: Request, res: Response, next) => {
     logger.info(`${req.method} ${req.path}`, { requestId: req.id });
     next();
   });
+
+  logger.info('→ Middleware registration complete\n');
 }
 
 /**
  * Initialize routes
  */
 async function initializeRoutes(app: Application): Promise<void> {
+  logger.info('→ Registering routes...');
+
   // Root endpoint
+  logger.info('  ✓ Root endpoint (/)');
   app.get('/', (req: Request, res: Response) => {
     res.json({
       message: 'Cairo Backend API',
-      version: '1.0.0',
+      version: '2.0.0',
       status: 'running',
     });
   });
@@ -97,21 +110,21 @@ async function initializeRoutes(app: Application): Promise<void> {
       // Then setup for the main page
       app.get('/api-docs', swaggerUi.setup(swaggerDocument.default));
 
-      logger.info('Swagger UI enabled at /api-docs');
+      logger.info('  ✓ Swagger UI (/api-docs)');
     } catch (error) {
-      logger.warn('Failed to load swagger.json, API docs disabled:', error);
+      logger.warn('  ⚠ Swagger UI failed to load');
     }
   } else {
-    logger.warn(
-      'Swagger spec not found. Run "npm run tsoa:generate" to enable API documentation.'
-    );
+    logger.warn('  ⚠ Swagger UI not available (run npm run tsoa:generate)');
   }
 
   // Register TSOA generated routes
+  logger.info('  ✓ TSOA generated routes');
   RegisterRoutes(app);
 
   // Manual route registration (temporary until tsoa is set up)
   // Health routes are registered manually since they don't require auth
+  logger.info('  ✓ Health check routes (/actuator/*)');
   const healthRouter = express.Router();
   const { HealthController } = await import('./features/health/health.controller.js');
   const healthController = new HealthController();
@@ -155,10 +168,14 @@ async function initializeRoutes(app: Application): Promise<void> {
   app.use('/actuator', healthRouter);
 
   // 404 handler for undefined routes
+  logger.info('  ✓ 404 handler');
   app.use(notFoundHandler);
 
   // Global error handler (must be last)
+  logger.info('  ✓ Error handler');
   app.use(errorHandler);
+
+  logger.info('→ Route registration complete\n');
 }
 
 /**
@@ -166,19 +183,21 @@ async function initializeRoutes(app: Application): Promise<void> {
  */
 async function initializeConnections(): Promise<void> {
   try {
-    logger.info('Initializing connections...');
+    logger.info('→ Initializing connections...');
 
     // Initialize database
+    logger.info('  ✓ Oracle database connection');
     await initializeDatabase();
 
     // Initialize Redis (only if enabled)
     if (config.redis.enabled) {
+      logger.info('  ✓ Redis cache connection');
       initializeRedis();
     } else {
-      logger.info('Redis disabled - running without cache (local dev mode)');
+      logger.info('  ⚠ Redis disabled (local dev mode)');
     }
 
-    logger.info('All connections initialized successfully');
+    logger.info('→ Connection initialization complete\n');
   } catch (error) {
     logger.error('Failed to initialize connections:', error);
     throw error;
@@ -201,9 +220,41 @@ async function startServer(): Promise<void> {
 
     // Start listening
     const server = app.listen(config.port, () => {
-      logger.info(`Server running on port ${config.port}`);
-      logger.info(`Environment: ${config.nodeEnv}`);
-      logger.info(`Health check: http://localhost:${config.port}/actuator/health`);
+      // ASCII Box Banner
+      const appName = 'CAIRO BACKEND API';
+      const port = `PORT: ${config.port}`;
+      const env = `ENVIRONMENT: ${config.nodeEnv.toUpperCase()}`;
+      const healthUrl = `http://localhost:${config.port}/actuator/health`;
+      const docsUrl = `http://localhost:${config.port}/api-docs`;
+
+      // Calculate box width based on longest line
+      const maxWidth = Math.max(
+        appName.length,
+        port.length,
+        env.length,
+        healthUrl.length,
+        docsUrl.length
+      ) + 4;
+
+      const horizontalBorder = '═'.repeat(maxWidth);
+      const padLeft = (text: string) => {
+        const rightPadding = maxWidth - text.length - 2;
+        return `║ ${text}${' '.repeat(rightPadding)} ║`;
+      };
+
+      console.log('\n');
+      console.log(`╔${horizontalBorder}╗`);
+      console.log(padLeft(appName));
+      console.log(`╠${horizontalBorder}╣`);
+      console.log(padLeft(port));
+      console.log(padLeft(env));
+      console.log(`╠${horizontalBorder}╣`);
+      console.log(padLeft('Health Check:'));
+      console.log(padLeft(healthUrl));
+      console.log(padLeft('API Documentation:'));
+      console.log(padLeft(docsUrl));
+      console.log(`╚${horizontalBorder}╝`);
+      console.log('\n');
     });
 
     // Graceful shutdown
